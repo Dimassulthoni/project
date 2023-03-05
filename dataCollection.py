@@ -33,8 +33,8 @@ while True:
                 x_max = max(x_max, hand['bbox'][0] + hand['bbox'][2])
                 y_max = max(y_max, hand['bbox'][1] + hand['bbox'][3])
             # Crop image
-            imgCrop3 = img[y_min - offset :y_max + offset, x_min - offset:x_max + offset]
-            cv2.imshow("ImageCrop3", imgCrop3)
+                imgCrop3 = img[y_min - offset :y_max + offset, x_min - offset:x_max + offset]
+                cv2.imshow("ImageCrop3", imgCrop3)
         imgCropShape = imgCrop1.shape
         imgWhite[0:imgCropShape[0], 0:imgCropShape[1]] = imgCrop1
         cv2.imshow("ImageCrop1", imgWhite)
