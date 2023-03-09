@@ -21,14 +21,30 @@ while True:
             #centerPoint1 = hand1['center']  # center of the hand cx,cy
             imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
             imgCrop1 = img[y - offset:y + h + offset, x - offset:x + w + offset]
-            aspectRatio = h / w
+            
             imgCropShape = imgCrop1.shape
-            imgWhite[0:imgCropShape[0], 0:imgCropShape[1]] = imgCrop1
+            aspectRatio = h / w
+            if aspectRatio > 1:
+                k = imgSize / h
+                wCal = math.ceil(k * w)
+                imgResize = cv2.resize(imgCrop1, (wCal, imgSize))
+                imgResizeShape = imgResize.shape
+                wGap = math.ceil((imgSize - wCal) / 2)
+                imgWhite[:, wGap:wCal + wGap] = imgResize
+            else:
+                k = imgSize / w
+                hCal = math.ceil(k * h)
+                imgResize = cv2.resize(imgCrop1, (imgSize, hCal))
+                imgResizeShape = imgResize.shape
+                hGap = math.ceil((imgSize - hCal) / 2)
+                imgWhite[hGap:hCal + hGap, :] = imgResize
+            #imgWhite[0:imgCropShape[0], 0:imgCropShape[1]] = imgCrop1
             cv2.imshow("ImageCrop1", imgWhite)
         else :
             # Hand 2
             hand2 = hands[1]
             x, y, w, h = hand2['bbox']
+            imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
             imgCrop2 = img[y - offset:y + h + offset, x - offset:x + w + offset]
             cv2.imshow("ImageCrop2", imgCrop2)
             # Calculate bounding box for both hands
@@ -41,9 +57,24 @@ while True:
             # Crop image
                 imgCrop3 = img[y_min - offset :y_max + offset, x_min - offset:x_max + offset]
                 imgCropShape = imgCrop3.shape
-                imgWhite[0:imgCropShape[0], 0:imgCropShape[1]] = imgCrop3
+                aspectRatio = h / w
+                if aspectRatio > 1:
+                    k = imgSize / h
+                    wCal = math.ceil(k * w)
+                    imgResize = cv2.resize(imgCrop3, (wCal, imgSize))
+                    imgResizeShape = imgResize.shape
+                    wGap = math.ceil((imgSize - wCal) / 2)
+                    imgWhite[:, wGap:wCal + wGap] = imgResize
+                else:
+                    k = imgSize / w
+                    hCal = math.ceil(k * h)
+                    imgResize = cv2.resize(imgCrop3, (imgSize, hCal))
+                    imgResizeShape = imgResize.shape
+                    hGap = math.ceil((imgSize - hCal) / 2)
+                    imgWhite[hGap:hCal + hGap, :] = imgResize
+                    #imgWhite[0:imgCropShape[0], 0:imgCropShape[1]] = imgCrop3
                 cv2.imshow("ImageCrop1", imgWhite)
-                #cv2.imshow("ImageCrop3", imgCrop3)
+                    #cv2.imshow("ImageCrop3", imgCrop3)
                 
         
   cv2.imshow("image", img)
