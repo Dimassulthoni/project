@@ -4,7 +4,7 @@ import numpy as np
 import math
 
 cap = cv2.VideoCapture(0)
-detector = HandDetector(maxHands=2)
+detector = HandDetector(maxHands=2, detectionCon=0.8)
 
 offset = 20
 imgSize = 300
@@ -12,6 +12,7 @@ imgSize = 300
 while True:
   success, img = cap.read()
   hands, img = detector.findHands(img)
+
   if hands:
         # Hand 1
         if len(hands) == 1:
@@ -21,7 +22,6 @@ while True:
             #centerPoint1 = hand1['center']  # center of the hand cx,cy
             imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
             imgCrop1 = img[y - offset:y + h + offset, x - offset:x + w + offset]
-            
             imgCropShape = imgCrop1.shape
             aspectRatio = h / w
             if aspectRatio > 1:
