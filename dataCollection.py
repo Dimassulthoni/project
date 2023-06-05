@@ -4,13 +4,14 @@ import numpy as np
 import math
 import time
 
+
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=2, detectionCon=0.8)
 
 offset = 20
 imgSize = 300
 
-folder = "Data/D"
+folder = "Data/N"
 counter = 0
 
 while True:
@@ -82,7 +83,7 @@ while True:
                 
   cv2.imshow("image", img)
   key = cv2.waitKey(1)
-  if key == ord("s"):
+  if key == ord("/"):
         counter += 1
         cv2.imwrite(f'{folder}/Image_{time.time()}.jpg',imgWhite)
         print(counter)

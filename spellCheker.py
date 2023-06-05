@@ -9,7 +9,6 @@ input_text = input("Masukkan teks yang ingin diperiksa: ")
 
 # Membagi teks menjadi kata-kata
 words = input_text.split()
-
 # Mengecek setiap kata dalam kamus
 for word in words:
     if not dict_id.check(word):
