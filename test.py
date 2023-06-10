@@ -3,6 +3,8 @@ from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 import numpy as np
 import math
+import time
+from collections import Counter
 
 
 cap = cv2.VideoCapture(0)
@@ -12,12 +14,20 @@ classifier = Classifier("Model/keras_model.h5", "Model/labels.txt")
 offset = 20
 imgSize = 300
 
-labels = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+labels = ["A", "B", "C", "D", "E", "F", "G", "H",
+          "I", "J", "K", "L", "M", "N", "O", "P", 
+          "Q", "R", "S", "T", "U", "V", "W", "X", 
+          "Y", "Z"]
+
+predictions_per_second = []
+start_time = 0
+
 
 while True:
     success, img = cap.read()
     imgOutput = img.copy()
     hands, img = detector.findHands(img)
+    
     if hands:
         # Hand 1
         if len(hands) == 1:
@@ -36,8 +46,7 @@ while True:
                 imgResizeShape = imgResize.shape
                 wGap = math.ceil((imgSize - wCal) / 2)
                 imgWhite[:, wGap:wCal + wGap] = imgResize
-                prediction, index = classifier.getPrediction(imgWhite, draw=False)
-                print(prediction, index)
+        
             else:
                 k = imgSize / w
                 hCal = math.ceil(k * h)
@@ -45,8 +54,7 @@ while True:
                 imgResizeShape = imgResize.shape
                 hGap = math.ceil((imgSize - hCal) / 2)
                 imgWhite[hGap:hCal + hGap, :] = imgResize
-                prediction, index = classifier.getPrediction(imgWhite, draw=False)
-                print(prediction, index)
+                
         else :
             # Hand 2
             hand2 = hands[1]
@@ -71,8 +79,7 @@ while True:
                     imgResizeShape = imgResize.shape
                     wGap = math.ceil((imgSize - wCal) / 2)
                     imgWhite[:, wGap:wCal + wGap] = imgResize
-                    prediction, index = classifier.getPrediction(imgWhite, draw=False)
-                    print(prediction, index)
+                    
                 else:
                     k = imgSize / w
                     hCal = math.ceil(k * h)
@@ -80,17 +87,26 @@ while True:
                     imgResizeShape = imgResize.shape
                     hGap = math.ceil((imgSize - hCal) / 2)
                     imgWhite[hGap:hCal + hGap, :] = imgResize
-                    prediction, index = classifier.getPrediction(imgWhite, draw=False)
-                    print(prediction, index)
+                    
+        prediction, index = classifier.getPrediction(imgWhite, draw=False)
+        predictions_per_second.append(tuple(labels[index]))
+        
+        current_time = time.time()
+        
+        # Jika sudah mencapai 1 detik, cari modus dari prediksi
+        if current_time - start_time >= 1:
+            prediction_counts = Counter(predictions_per_second)
+            mode_prediction = max(prediction_counts, key=prediction_counts.get)
+            print("Mode prediction:", mode_prediction)
 
+            # Reset daftar prediksi per detik dan waktu mulai
+            predictions_per_second = []
+            start_time = time.time()
+        
         cv2.rectangle(imgOutput, (x - offset, y - offset-50),
                       (x - offset+90, y - offset-50+50), (255, 0, 255), cv2.FILLED)
         cv2.putText(imgOutput, labels[index], (x, y -26), cv2.FONT_HERSHEY_COMPLEX, 1.7, (255, 255, 255), 2)
-        #cv2.rectangle(imgOutput, (x-offset, y-offset),
-        #              (x + w+offset, y + h+offset), (255, 0, 255), 4)
-
-
-        cv2.imshow("ImageCrop", imgCrop)
+        #cv2.imshow("ImageCrop", imgCrop)
         cv2.imshow("ImageWhite", imgWhite)
 
     cv2.imshow("Image", imgOutput)
