@@ -8,7 +8,7 @@ from collections import Counter
 
 
 cap = cv2.VideoCapture(0)
-detector = HandDetector(maxHands=2, detectionCon=0.90)
+detector = HandDetector(maxHands=2, detectionCon=0.80)
 classifier = Classifier("Model/keras_model.h5", "Model/labels.txt")
 
 offset = 20
