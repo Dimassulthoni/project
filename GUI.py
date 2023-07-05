@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 import cv2
+import numpy as np
 from PIL import Image, ImageTk
 from tkinter import font
 import sounddevice as sd
+from cvzone.HandTrackingModule import HandDetector
 from gtts import gTTS
-import os
 import pygame
 
 
@@ -26,19 +27,10 @@ def get_video_devices():
         i += 1
     return video_devices
 
- 
-
-
-
 class WebcamApp:
     def __init__(self, window, video_source=0):
         self.window = window
         self.window.title("BISIS")
-        
-        # Variabel status untuk melacak status webcam
-        self.webcam_open = False
-        # Membuat objek VideoCapture
-        self.cap = cv2.VideoCapture(video_source)
         
         # Mendapatkan daftar perangkat audio dan video
         self.audio_devices = get_audio_devices()
@@ -65,14 +57,23 @@ class WebcamApp:
          # Membuat objek VideoCapture
         self.video_capture = cv2.VideoCapture(video_source)
         
+         # Menginisialisasi HandDetector
+        self.hand_detector = HandDetector(maxHands=2, detectionCon=0.8)
+        
         # Membuat elemen Canvas untuk menampilkan gambar webcam
         self.frame_cv = tk.Frame (window)
         self.frame_cv.pack(anchor=tk.NW)
-        self.canvas1 = tk.Canvas(self.frame_cv, width=640, height=480)
-        self.canvas1.grid(column=0)
+        
+        # Membuat label untuk menampilkan output webcam
+        self.label1 = tk.Label(self.frame_cv)
+        self.label1.pack(padx=10, pady=10, side=tk.LEFT)
+
+        self.label2 = tk.Label(self.frame_cv)
+        self.label2.pack(padx=10, pady=10, side=tk.LEFT)
         
         # Fungsi untuk membaca frame webcam
         self.update()
+        
         
         #textfield
         self.frame_tf = tk.Frame(window)
@@ -93,24 +94,47 @@ class WebcamApp:
         sound.play()
         
     def update(self):
-        # Membaca frame webcam
+    # Membaca frame dari video source
         ret, frame = self.video_capture.read()
-        
+
         if ret:
-            # Mengkonversi frame menjadi format RGB
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Mengubah frame menjadi objek gambar PIL
-            image = Image.fromarray(frame_rgb)
-            resized_image = image.resize((640, 480))
-            
-            self.photo = ImageTk.PhotoImage(resized_image)
+            # Duplikasi frame
+            frame1 = frame.copy()
+            frame2 = frame.copy()
+
+            # Mendeteksi tangan dalam salah satu frame
+            hands = self.detect_hand(frame1)
+            if hands:
+                # Mengambil tangan pertama
+                hand1 = hands[0]
+                bbox = hand1["bbox"]
+                x, y, w, h = bbox
+                # Menandai tangan dengan kotak bounding box
+                cv2.rectangle(frame1, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            # Konversi frame ke format PIL Image
+            pil_image1 = Image.fromarray(cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB))
+            pil_image2 = Image.fromarray(cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB))
+
+            # Konversi PIL Image ke format ImageTk
+            image1 = ImageTk.PhotoImage(pil_image1)
+            image2 = ImageTk.PhotoImage(pil_image2)
+
+            # Menampilkan frame di tkinter
+            self.label1.configure(image=image1)
+            self.label1.image = image1
+
+            self.label2.configure(image=image2)
+            self.label2.image = image2
+
+        # Memanggil metode update secara rekursif setiap 10 milidetik (atau sesuai kebutuhan)
+        self.window.after(10, self.update)
         
-            # Menampilkan gambar di elemen Canvas
-            self.canvas1.create_image(0, 0, image=self.photo, anchor=tk.NW)
-        
-        # Mengupdate tampilan setiap 15 milidetik
-        self.window.after(15, self.update)
+    def detect_hand(self, frame):
+        # Mendeteksi tangan menggunakan HandDetector
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        hands, _ = self.hand_detector.findHands(frame)
+        return hands
                       
     def select_audio_device(self):
         selected_device = self.audio_device_var.get()

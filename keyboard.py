@@ -1,31 +1,49 @@
+import tkinter as tk
 import cv2
-import os
+from PIL import Image, ImageTk
 
-def flip_images(folder_path):
-    # Mendapatkan daftar file gambar dalam folder
-    image_files = [file for file in os.listdir(folder_path) if file.endswith(('.jpg', '.jpeg', '.png'))]
+class WebcamApp:
+    def __init__(self, window, video_source=0):
+        self.window = window
+        self.window.title("Webcam App")
 
-    for file_name in image_files:
-        # Baca gambar dari file
-        image_path = os.path.join(folder_path, file_name)
-        image = cv2.imread(image_path)
+        # Membuat label untuk menampilkan output webcam
+        self.label1 = tk.Label(self.window)
+        self.label1.pack(padx=10, pady=10, side=tk.LEFT)
 
-        # Melakukan flipping secara horizontal (mirror)
-        flipped_image = cv2.flip(image, 1)
+        self.label2 = tk.Label(self.window)
+        self.label2.pack(padx=10, pady=10, side=tk.LEFT)
 
-        # Mendapatkan nama file dan ekstensinya
-        base_name = os.path.splitext(file_name)[0]
-        extension = os.path.splitext(file_name)[1]
+        # Membuka video source (webcam)
+        self.video = cv2.VideoCapture(video_source)
 
-        # Menyusun path file untuk gambar yang telah di-flip
-        flipped_image_path = os.path.join(folder_path, base_name + '_flipped' + extension)
+        self.update()
 
-        # Menyimpan gambar yang telah di-flip
-        cv2.imwrite(flipped_image_path, flipped_image)
+    def update(self):
+        # Membaca frame dari video source
+        ret, frame = self.video.read()
 
-        print(f"Gambar {file_name} telah di-flip dan disimpan sebagai {base_name}_flipped{extension}")
+        if ret:
+            # Konversi frame ke format yang dapat ditampilkan di tkinter
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(frame)
+            image = ImageTk.PhotoImage(image)
 
-# Path folder yang berisi gambar-gambar yang akan di-flip
-folder_path = 'C:/Users/HP/OneDrive/Dokumen/tugas kuliah/SKRIPSI/isyarat/project/Data/P'
+            # Menampilkan frame di tkinter
+            self.label1.configure(image=image)
+            self.label1.image = image
 
-flip_images(folder_path)
+            # Menampilkan duplikat frame di sebelahnya
+            self.label2.configure(image=image)
+            self.label2.image = image
+
+        # Memanggil metode update secara rekursif setiap 10 milidetik (atau sesuai kebutuhan)
+        self.window.after(10, self.update)
+
+    def run(self):
+        self.window.mainloop()
+
+# Membuat instance aplikasi dan menjalankannya
+root = tk.Tk()
+app = WebcamApp(root)
+app.run()
