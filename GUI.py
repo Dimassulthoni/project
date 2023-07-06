@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image, ImageTk
 from tkinter import font
 import sounddevice as sd
+import math
 from cvzone.HandTrackingModule import HandDetector
 from gtts import gTTS
 import pygame
@@ -101,17 +102,77 @@ class WebcamApp:
             # Duplikasi frame
             frame1 = frame.copy()
             frame2 = frame.copy()
+            
+            offset = 20
+            imgSize = 450
 
             # Mendeteksi tangan dalam salah satu frame
             hands = self.detect_hand(frame1)
             if hands:
                 # Mengambil tangan pertama
-                hand1 = hands[0]
-                bbox = hand1["bbox"]
-                x, y, w, h = bbox
-                # Menandai tangan dengan kotak bounding box
-                cv2.rectangle(frame1, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                if len(hands) == 1:
+                    hand1 = hands[0]
+                    x, y, w, h = hand1['bbox']
+                    imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+                    imgCrop = frame[y - offset:y + h + offset, x - offset:x + w + offset]
+                    imgCropShape = imgCrop.shape
+                    aspectRatio = h / w
+                    if aspectRatio > 1:
+                        k = imgSize / h
+                        wCal = math.ceil(k * w)
+                        imgResize = cv2.resize(imgCrop, (wCal, imgSize))
+                        imgResizeShape = imgResize.shape
+                        wGap = math.ceil((imgSize - wCal) / 2)
+                        imgWhite[:, wGap:wCal + wGap] = imgResize
+                        frame2 = imgWhite
 
+                    else:
+                        k = imgSize / w
+                        hCal = math.ceil(k * h)
+                        imgResize = cv2.resize(imgCrop, (imgSize, hCal))
+                        imgResizeShape = imgResize.shape
+                        hGap = math.ceil((imgSize - hCal) / 2)
+                        imgWhite[hGap:hCal + hGap, :] = imgResize
+                        frame2 = imgWhite
+                    # Menandai tangan dengan kotak bounding box
+                    cv2.rectangle(frame1, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+                    
+                else :
+                    hand2 = hands[1]
+                    x, y, w, h = hand2['bbox']
+                    imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+                    imgCrop = frame[y - offset:y + h + offset, x - offset:x + w + offset]
+                    # Calculate bounding box for both hands
+                    x_min, y_min, x_max, y_max = 10000, 10000, -1, -1
+                    for hand in hands:
+                        x_min = min(x_min, hand['bbox'][0])
+                        y_min = min(y_min, hand['bbox'][1])
+                        x_max = max(x_max, hand['bbox'][0] + hand['bbox'][2])
+                        y_max = max(y_max, hand['bbox'][1] + hand['bbox'][3])
+                        imgCrop = frame[y_min - offset :y_max + offset, x_min - offset:x_max + offset]
+                        imgCropShape = imgCrop.shape
+                        aspectRatio = h / w
+                        if aspectRatio > 1:
+                            k = imgSize / h
+                            wCal = math.ceil(k * w)
+                            imgResize = cv2.resize(imgCrop, (wCal, imgSize))
+                            imgResizeShape = imgResize.shape
+                            wGap = math.ceil((imgSize - wCal) / 2)
+                            imgWhite[:, wGap:wCal + wGap] = imgResize
+                            frame2 = imgWhite
+
+                        else:
+                            k = imgSize / w
+                            hCal = math.ceil(k * h)
+                            imgResize = cv2.resize(imgCrop, (imgSize, hCal))
+                            imgResizeShape = imgResize.shape
+                            hGap = math.ceil((imgSize - hCal) / 2)
+                            imgWhite[hGap:hCal + hGap, :] = imgResize
+                            frame2 = imgWhite
+                            
+        
+                            
             # Konversi frame ke format PIL Image
             pil_image1 = Image.fromarray(cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB))
             pil_image2 = Image.fromarray(cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB))
