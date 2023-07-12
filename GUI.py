@@ -13,6 +13,7 @@ from collections import Counter
 from gtts import gTTS
 import pygame
 
+previous_prediction = ""
 
 def get_audio_devices():
         audio_devices = sd.query_devices()
@@ -101,7 +102,7 @@ class WebcamApp:
     def update(self):
     # Membaca frame dari video source
         ret, frame = self.video_capture.read()
-
+        global previous_prediction  # Tambahkan deklarasi global
         if ret:
             # Duplikasi frame
             self.frame1 = frame.copy()
@@ -125,9 +126,10 @@ class WebcamApp:
             self.label2.image = image2
             
             # Tampilkan prediksi di GUI
-            if prediction:
+            if prediction and prediction != previous_prediction:
+                previous_prediction = prediction
                 current_text = self.text_field.get()
-                new_text = current_text + prediction + " "
+                new_text = current_text.strip() + prediction + " "
                 self.text_field.delete(0, tk.END)
                 self.text_field.insert(0, new_text)
 
@@ -137,10 +139,11 @@ class WebcamApp:
     def detect_hand(self, frame):
         # Mendeteksi tangan menggunakan HandDetector
         hands, _ = self.hand_detector.findHands(frame)
-        labels = ["A", "B", "C", "D", "E", "F", "G", "H",
-                  "I", "J", "K", "L", "M", "N", "O", "P", 
-                  "Q", "R", "S", "T", "U", "V", "W", "X", 
-                  "Y", "Z"]
+        labels = ["a", "b", "c", "d", "e", "f", "g", "h",
+                  "i", "j", "k", "l", "m", "n", "o", "p", 
+                  "q", "r", "s", "t", "u", "v", "w", "x", 
+                  "y", "z"]
+        
         offset = 20
         imgSize = 450
         
