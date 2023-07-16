@@ -12,6 +12,8 @@ import time
 from collections import Counter
 from gtts import gTTS
 import pygame
+import enchant
+from Levenshtein import distance
 
 previous_prediction = ""
 
@@ -80,7 +82,6 @@ class WebcamApp:
         # Fungsi untuk membaca frame webcam
         self.update()
         
-        
         #textfield
         self.frame_tf = tk.Frame(window)
         self.frame_tf.pack(anchor=tk.SW, side=tk.LEFT)
@@ -90,6 +91,32 @@ class WebcamApp:
         
         #button_tts
         tk.Button(self.frame_tf, text= "TTS", width=10, height=2, command= self.tts).grid(column=1, row= 0, padx=10, pady=5)
+        tk.Button(self.frame_tf, text= "Spell Checker", width=10, height=2, command= self.spellcheck).grid(column=2, row=0, padx=10, pady=5)
+        
+    def spellcheck(self):
+        # Membuat objek dictionary untuk bahasa Indonesia
+        dict_id = enchant.Dict('id_ID')
+
+        # Meminta masukan dari pengguna
+        input_text = self.text_field.get()
+
+        # Membagi teks menjadi kata-kata
+        words = input_text.split()
+        # Mengecek setiap kata dalam kamus
+        for word in words:
+            if not dict_id.check(word):
+                # Jika kata tidak ada dalam kamus, menampilkan saran kata yang mirip
+                suggestions = dict_id.suggest(word)
+                # Menghitung jarak Levenshtein antara kata yang salah dan setiap saran kata
+                distances = [distance(word, suggestion) for suggestion in suggestions]
+                # Memilih saran kata dengan jarak Levenshtein terkecil
+                best_suggestion = suggestions[distances.index(min(distances))]
+                # Mengganti kata yang salah dengan saran kata terbaik
+                input_text = input_text.replace(word, best_suggestion)
+
+        # Menampilkan teks yang telah diperbaiki ejaannya
+        self.text_field.delete(0, tk.END)
+        self.text_field.insert(0, input_text)
         
     def tts(self):
         bahasa = 'id'
@@ -244,4 +271,3 @@ window.resizable(0,0)
 app = WebcamApp(window)
 # Menjalankan aplikasi
 window.mainloop()
-
