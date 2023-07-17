@@ -39,6 +39,15 @@ class WebcamApp:
         self.window = window
         self.window.title("BISIS")
         
+        #prediksi per detik
+        self.predictions_per_second = []
+        self.start_time = 0
+        self.mode_prediction = None
+        self.labels = ["a", "b", "c", "d", "e", "f", "g", "h",
+                       "i", "j", "k", "l", "m", "n", "o", "p", 
+                       "q", "r", "s", "t", "u", "v", "w", "x", 
+                       "y", "z"]
+        
         # Mendapatkan daftar perangkat audio dan video
         self.audio_devices = get_audio_devices()
         self.video_devices = get_video_devices()
@@ -166,10 +175,7 @@ class WebcamApp:
     def detect_hand(self, frame):
         # Mendeteksi tangan menggunakan HandDetector
         hands, _ = self.hand_detector.findHands(frame)
-        labels = ["a", "b", "c", "d", "e", "f", "g", "h",
-                  "i", "j", "k", "l", "m", "n", "o", "p", 
-                  "q", "r", "s", "t", "u", "v", "w", "x", 
-                  "y", "z"]
+        
         
         offset = 20
         imgSize = 450
@@ -234,10 +240,23 @@ class WebcamApp:
                         imgWhite[hGap:hCal + hGap, :] = imgResize
                         self.frame2 = imgWhite
             prediction, index = self.classifier.getPrediction(imgWhite, draw=False)
+            self.predictions_per_second.append(self.labels[index])
             
+            current_time = time.time()
+            
+            # Jika sudah mencapai 1 detik, cari modus dari prediksi
+            if current_time - self.start_time >= 1:
+                prediction_counts = Counter(self.predictions_per_second)
+                self.mode_prediction = max(prediction_counts, key=prediction_counts.get)
+                print("Mode prediction:", self.mode_prediction)
+    
+                # Reset daftar prediksi per detik dan waktu mulai
+                self.predictions_per_second = []
+                self.start_time = time.time()
+                
              # Ubah index prediksi menjadi huruf
-            if 0 <= index < len(labels):
-                prediction = labels[index]
+            if 0 <= index < len(self.labels):
+                prediction = self.mode_prediction
             return prediction
         else:
             return None
@@ -256,7 +275,7 @@ class WebcamApp:
 window = tk.Tk()
 
 lebar = 1280
-tinggi = 720
+tinggi = 650
 
 screenwidth = window.winfo_screenwidth()
 screenheight = window.winfo_screenheight()
